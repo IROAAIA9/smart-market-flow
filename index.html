@@ -209,7 +209,20 @@
         <div class="flow-step highlight-green"><div class="step-header"><div class="step-number green">3</div><div class="step-title">🎁 Giftbox Icon Always Displayed</div></div><div class="step-body">The giftbox icon is <strong>always shown</strong> on the Dashboard header for all users, regardless of eligibility status. The eligibility check determines what happens <em>after</em> the user taps it.</div></div>
         <div class="arrow-connector"><div class="arrow-line"></div><div class="arrow-label">User taps giftbox 🎁</div><div class="arrow-head"></div></div>
         <div class="flow-step"><div class="step-header"><div class="step-number">4</div><div class="step-title">Client Status Check</div></div><div class="step-body"><code>GET /v1/client-status-check</code><br><br>Verifies SMKT enrollment, retrieves accountId from Redis cache or XLS backend. Returns <code>{ hasSmkt: true/false }</code></div></div>
-        <div class="arrow-connector"><div class="arrow-line"></div><div class="arrow-label">hasSmkt: true</div><div class="arrow-head"></div></div>
+        <div class="arrow-connector"><div class="arrow-line"></div><div class="arrow-head"></div></div>
+        <div class="decision-box">hasSmkt?</div>
+        <div class="arrow-connector"><div class="arrow-line" style="height:12px"></div></div>
+        <div class="branch-container">
+            <div class="branch">
+                <div class="branch-label yes">✅ hasSmkt: true</div>
+                <div class="flow-step highlight-green" style="max-width:100%"><div class="step-header"><div class="step-number green">→</div><div class="step-title">📱 Smart Market Hub</div></div><div class="step-body">User has SMKT product.<br>Proceed to rewards dashboard.</div></div>
+            </div>
+            <div class="branch">
+                <div class="branch-label no">❌ hasSmkt: false</div>
+                <div class="flow-step highlight-yellow" style="max-width:100%"><div class="step-header"><div class="step-number yellow">→</div><div class="step-title">🚀 Opt-in Flow</div></div><div class="step-body">User does NOT have SMKT product.<br>Redirect to opt-in / enrollment flow.</div></div>
+            </div>
+        </div>
+        <div class="arrow-connector"><div class="arrow-line"></div><div class="arrow-label">hasSmkt: true path</div><div class="arrow-head"></div></div>
         <div class="flow-step highlight-yellow"><div class="step-header"><div class="step-number yellow">5</div><div class="step-title">📱 Smart Market Hub</div></div><div class="step-body"><code>GET /v1/account-balance</code><br><br>Loads rewards dashboard with counters for <strong>Points</strong> (Pool 3), <strong>Cashback</strong> (Pool 2), <strong>Vouchers</strong> (eCoupons), <strong>Trees</strong> (Pool 4).</div></div>
         <div class="arrow-connector"><div class="arrow-line"></div><div class="arrow-label">User selects reward type</div><div class="arrow-head"></div></div>
         <div class="branch-container" style="max-width:900px;gap:12px">
@@ -231,25 +244,25 @@
         <div class="arrow-connector"><div class="arrow-line"></div><div class="arrow-label">At user login (sync)</div><div class="arrow-head"></div></div>
         <div class="flow-step highlight-yellow"><div class="step-header"><div class="step-number yellow">3</div><div class="step-title">FE calls Eligibility API</div></div><div class="step-body"><code>GET /services/spending-categorization/v1/eligibility</code><br>Header: <code>iv-user: {CIF}</code><br><br>Calls → <code>spending-categorization-service</code> → <code>users-service</code> → <code>RO_USERS DB</code><br><br>✅ SM + SMKT both found → <code>{ "isEligible": true }</code><br>❌ Missing either → <code>{ "isEligible": false }</code><br>⚠️ Response cached at user session level<br><br><strong>Note:</strong> The 🎁 giftbox icon is always displayed regardless of this result. The eligibility response determines the behavior <em>after</em> the user taps the icon.</div></div>
         <div class="arrow-connector"><div class="arrow-line"></div><div class="arrow-head"></div></div>
-        <div class="flow-step highlight-green"><div class="step-header"><div class="step-number green">4</div><div class="step-title">Dashboard Display</div></div><div class="step-body">The 🎁 giftbox icon is <strong>always displayed</strong> on the Dashboard header for all users.<br><br>When tapped:<br><code>isEligible: true</code> → Proceed to Client Status Check → Smart Market Hub<br><code>isEligible: false</code> → Show appropriate message (user not enrolled)<br><code>500 Error</code> → No impact, treat gracefully</div></div>
+        <div class="flow-step highlight-green"><div class="step-header"><div class="step-number green">4</div><div class="step-title">Dashboard Display</div></div><div class="step-body">The 🎁 giftbox icon is <strong>always displayed</strong> on the Dashboard header for all users.<br><br>When tapped → <code>GET /v1/client-status-check</code>:<br><code>hasSmkt: true</code> → Proceed to <strong>Smart Market Hub</strong><br><code>hasSmkt: false</code> → Redirect to <strong>Opt-in Flow</strong> (enrollment)<br><code>500 Error</code> → No impact, treat gracefully</div></div>
     </div>
 </div>
 
 <div class="section" id="sec-onboarding">
     <div class="section-title">🚀 Onboarding — Client Status Check</div>
-    <div class="section-subtitle">Verifying SMKT enrollment and retrieving accountId from XLS backend</div>
+    <div class="section-subtitle">Verifying SMKT enrollment: hasSmkt → Hub, no SMKT → Opt-in Flow</div>
     <div class="flow-container">
         <div class="flow-step"><div class="step-header"><div class="step-number">1</div><div class="step-title">User taps giftbox 🎁 on Dashboard</div></div><div class="step-body">BFF receives <code>GET /v1/client-status-check</code></div></div>
         <div class="arrow-connector"><div class="arrow-line"></div><div class="arrow-head"></div></div>
-        <div class="flow-step highlight-yellow"><div class="step-header"><div class="step-number yellow">2</div><div class="step-title">Check Redis Cache</div></div><div class="step-body">Key: <code>CIF</code> → look for <code>accountId</code> with TTL<br><br>✅ Found → return <code>{ hasSmkt: true }</code> immediately<br>❌ Not found → proceed to Step 3</div></div>
+        <div class="flow-step highlight-yellow"><div class="step-header"><div class="step-number yellow">2</div><div class="step-title">Check Redis Cache</div></div><div class="step-body">Key: <code>CIF</code> → look for <code>accountId</code> with TTL<br><br>✅ Found → return <code>{ hasSmkt: true }</code> → <strong>Smart Market Hub</strong><br>❌ Not found → proceed to Step 3</div></div>
         <div class="arrow-connector"><div class="arrow-line"></div><div class="arrow-label">Cache miss</div><div class="arrow-head"></div></div>
         <div class="flow-step"><div class="step-header"><div class="step-number">3</div><div class="step-title">Query users-service</div></div><div class="step-body"><code>GET /v2/users/{CIF}</code><br><br>Returns list of products + optional <code>SMKT_AccountId</code></div></div>
         <div class="arrow-connector"><div class="arrow-line"></div><div class="arrow-head"></div></div>
         <div class="decision-box">SMKT in products[] AND AccountId exists?</div>
         <div class="arrow-connector"><div class="arrow-line" style="height:12px"></div></div>
         <div class="branch-container">
-            <div class="branch"><div class="branch-label yes">✅ YES — Has AccountId</div><div class="flow-step highlight-green" style="max-width:100%"><div class="step-header"><div class="step-number green">✓</div><div class="step-title">Store & Return</div></div><div class="step-body">Store accountId in Redis<br>Return <code>{ hasSmkt: true }</code></div></div></div>
-            <div class="branch"><div class="branch-label no">⚠️ NO — Missing AccountId</div><div class="flow-step highlight-yellow" style="max-width:100%"><div class="step-header"><div class="step-number yellow">→</div><div class="step-title">Call XLS Backend</div></div><div class="step-body"><code>GET /account/{CIF}?isUMI=true</code><br><br>Check XLS for accountId + Customer Status (attribute <code>2300000000</code>):<br>• Value <code>"0"</code> = Enabled → store & return true<br>• Value <code>"1"</code> = Disabled → unenroll → return false<br>• Not found → unenroll → return false</div></div></div>
+            <div class="branch"><div class="branch-label yes">✅ YES — Has AccountId</div><div class="flow-step highlight-green" style="max-width:100%"><div class="step-header"><div class="step-number green">✓</div><div class="step-title">Store & Return</div></div><div class="step-body">Store accountId in Redis<br>Return <code>{ hasSmkt: true }</code> → <strong>Smart Market Hub</strong></div></div></div>
+            <div class="branch"><div class="branch-label no">⚠️ NO — Missing AccountId</div><div class="flow-step highlight-yellow" style="max-width:100%"><div class="step-header"><div class="step-number yellow">→</div><div class="step-title">Call XLS Backend</div></div><div class="step-body"><code>GET /account/{CIF}?isUMI=true</code><br><br>Check XLS for accountId + Customer Status (attribute <code>2300000000</code>):<br>• Value <code>"0"</code> = Enabled → store & return true → <strong>Hub</strong><br>• Value <code>"1"</code> = Disabled → unenroll → return false → <strong>Opt-in Flow</strong><br>• Not found → unenroll → return false → <strong>Opt-in Flow</strong></div></div></div>
         </div>
     </div>
 </div>
